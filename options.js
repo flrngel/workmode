@@ -3,7 +3,7 @@
 //WorkMode 3.0.2 - Using Chrome Storage API + Custom URL Blocking
 
 // Default URLs/phrases for display when resetting.
-const displayDefaultBlockedUrls = [
+var displayDefaultBlockedUrls = [
   "facebook.com/",
   "twitter.com/",
   "youtube.com/",
@@ -16,7 +16,7 @@ const displayDefaultBlockedUrls = [
 ];
 
 // Default URLs/phrases for storage (all lowercase).
-const storageDefaultBlockedUrls = displayDefaultBlockedUrls.map(url => url.toLowerCase());
+var storageDefaultBlockedUrls = displayDefaultBlockedUrls.map(url => url.toLowerCase());
 
 /**
  * Function that saves options to Chrome's localstorage

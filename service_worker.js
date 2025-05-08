@@ -7,7 +7,9 @@ const initStorageCache = chrome.storage.sync.get().then((items) => {
   Object.assign(storageCache, items);
 });
 
-let resetArray = [
+// Default blocked URLs/phrases. These must be lowercase for matching logic.
+// This list should ideally be consistent with `storageDefaultBlockedUrls` in options.js.
+const defaultBlockedUrls = [
     "facebook.com/",
     "twitter.com/",
     "youtube.com/",
@@ -16,19 +18,8 @@ let resetArray = [
     "vimeo.com/",
     "plus.google",
     "tumblr.com/",
-    "instagram.com/",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
-  ];
+    "instagram.com/"
+  ].map(url => url.toLowerCase()); // Ensure all default items are lowercase
  
 /**
  * Adds Chrome onUpdated listener that senses when to close tabs
@@ -38,25 +29,24 @@ chrome.tabs.onUpdated.addListener(function(id, info, tab) {
         var bool = items.activated;
         if(bool.indexOf("true") > -1) {
             chrome.storage.sync.get({
-            option: resetArray
+            blockedUrls: defaultBlockedUrls // Use new key 'blockedUrls' and its lowercase defaults
             }, function(items) {
-                var x;
-                for(x = 1; x <= 20; x++) {
-                        //case if option was empty, we can ignore it
-                        if(items.option[x-1] === "") {
-                            continue;
+                const currentBlockedUrls = items.blockedUrls; // These are already lowercase from storage/defaults
+                for (const pattern of currentBlockedUrls) {
+                    // pattern is already lowercase. tab.url is converted to lowercase for matching.
+                    if (tab.url.toLowerCase().indexOf(pattern) !== -1) {
+                        try {
+                            chrome.tabs.remove(id);
                         }
-
-                        //case if URL is found in options, then remove!
-                        if(tab.url.toLowerCase().indexOf(items.option[x-1]) !== -1){
-                            try {
-                                chrome.tabs.remove(id);
-                            }
-                            catch {
-                                console.log('Failed to remove tabId: '+ tab.url.toLowerCase());
-                            }
+                        catch (e) {
+                            // Log error if removal fails (e.g., tab already closed by other means)
+                            console.log('Failed to remove tabId: '+ id + ' for URL: ' + tab.url.toLowerCase(), e);
                         }
+                        // Tab matched and removal attempted, no need to check other patterns for this tab update.
+                        // The setIcon call below will still execute.
+                        return; 
                     }
+                }
             });
             try {
                 chrome.action.setIcon({
@@ -67,7 +57,7 @@ chrome.tabs.onUpdated.addListener(function(id, info, tab) {
                 });
             }
             catch {
-                // Note: This may be expected if a tab is removed already
+                // Note: This may be expected if tab is already removed or other edge cases.
             }
         }
         else {
@@ -80,7 +70,7 @@ chrome.tabs.onUpdated.addListener(function(id, info, tab) {
                 });
             }   
             catch {
-                // Note: This may be expected if a tab is removed already
+                // Note: This may be expected if tab is already removed or other edge cases.
             }
         }  
     });

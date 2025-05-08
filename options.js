@@ -2,7 +2,8 @@
 //Shrey Ravi
 //WorkMode 3.0.2 - Using Chrome Storage API + Custom URL Blocking
 
-resetArray = [
+// Default URLs/phrases for display when resetting.
+const displayDefaultBlockedUrls = [
   "facebook.com/",
   "twitter.com/",
   "youtube.com/",
@@ -11,52 +12,46 @@ resetArray = [
   "vimeo.com/",
   "plus.google",
   "tumblr.com/",
-  "instagram.com/",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  ""
+  "instagram.com/"
 ];
+
+// Default URLs/phrases for storage (all lowercase).
+const storageDefaultBlockedUrls = displayDefaultBlockedUrls.map(url => url.toLowerCase());
 
 /**
  * Function that saves options to Chrome's localstorage
  */
 function save_options() {
-	var options = new Array(20);
-	var i;
-	for(i = 1; i <= options.length; i++){
-		options[i-1] = document.getElementById('website'+i).value;
-	}
+  const urlsText = document.getElementById('blockedUrlsTextarea').value;
+  const processedUrls = urlsText.split('\n')
+                              .map(url => url.trim()) // Trim whitespace
+                              .filter(url => url !== ''); // Remove empty lines
+  
+  // Store lowercase versions for case-insensitive matching in service_worker
+  const urlsToStore = processedUrls.map(url => url.toLowerCase());
+
   chrome.storage.sync.set({
-    option: options,
+    blockedUrls: urlsToStore, // Use new key 'blockedUrls'
   }, function() {
     // Update status to let user know options were saved.
     var status = document.getElementById('status');
     status.textContent = 'Options saved! Thank you.';
     setTimeout(function() {
       status.textContent = '';
-    }, 750);
+    }, 1000); 
   });
 }
 
 /**
- * Restores select box and checkbox state using the preferences stored in chrome.storage.
+ * Restores textarea state using the preferences stored in chrome.storage.
  */
 function restore_options() {
   chrome.storage.sync.get({
-    option: resetArray
+    blockedUrls: storageDefaultBlockedUrls // Default to lowercase stored defaults if 'blockedUrls' not found
   }, function(items) {
-  	var x;
-	for(x = 1; x <= 20; x++){
-		document.getElementById('website'+x).value = items.option[x-1];
-	}
+    // items.blockedUrls are expected to be lowercase from storage or from storageDefaultBlockedUrls.
+    // Display them in the textarea.
+    document.getElementById('blockedUrlsTextarea').value = items.blockedUrls.join('\n');
   });
 }
 
@@ -64,16 +59,16 @@ function restore_options() {
  * Resets the options input to a default start state
  */
 function reset() {
-	var x;
-	for(x = 1; x <= 20; x++){
-		document.getElementById('website'+x).value = resetArray[x-1];
-	}
+  // Populate textarea with display defaults (maintaining original casing for display)
+  document.getElementById('blockedUrlsTextarea').value = displayDefaultBlockedUrls.join('\n');
+  // Save these default settings (this will also process them: trim, filter, lowercase for storage)
+  save_options();
   // Update status to let user know options were saved.
   var status = document.getElementById('status');
   status.textContent = 'Options were reset to install configurations.';
   setTimeout(function() {
     status.textContent = '';
-  }, 750);
+  }, 1500); // Longer duration for reset message
 }
 
 /**
@@ -86,7 +81,7 @@ document.addEventListener('DOMContentLoaded', restore_options);
  */
 var resetbtn = document.getElementById('reset');
 if(resetbtn) {
-	resetbtn.addEventListener('click',reset);
+  resetbtn.addEventListener('click', reset);
 }
 
 /**
@@ -94,6 +89,5 @@ if(resetbtn) {
  */
 var svbtn = document.getElementById('save');
 if(svbtn) {
-  svbtn.addEventListener('click',
-    save_options);
+  svbtn.addEventListener('click', save_options);
 }

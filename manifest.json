@@ -20,5 +20,13 @@
   "action": {
     "default_icon": "icon.png",
     "default_title": "Work Mode - Custom URL Blocking"
+  },
+  "commands": {
+    "toggle_work_mode": {
+      "suggested_key": {
+        "default": "Alt+Shift+W"
+      },
+      "description": "Toggle Work Mode Plus on/off"
+    }
   }
 }

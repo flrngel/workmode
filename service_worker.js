@@ -189,3 +189,23 @@ chrome.runtime.onInstalled.addListener((details) => {
 chrome.runtime.onStartup.addListener(() => {
     syncIconWithStorage();
 });
+
+chrome.commands.onCommand.addListener(function (command) {
+    if (command === "toggle_work_mode") {
+        chrome.storage.sync.get(['activated'], function (items) {
+            let currentActivated = items.activated;
+            if (currentActivated === undefined || currentActivated === null) {
+                currentActivated = "false"; // Default to "false" if not set
+            }
+
+            const newActivatedState = (currentActivated === "true") ? "false" : "true";
+
+            chrome.storage.sync.set({ 'activated': newActivatedState }, function () {
+                if (chrome.runtime.lastError) {
+                    console.error("Error setting 'activated' state via command:", chrome.runtime.lastError.message);
+                }
+                updateIconVisuals(newActivatedState === "true");
+            });
+        });
+    }
+});

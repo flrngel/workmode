@@ -14,21 +14,58 @@
         overflow: auto;
         max-width: 400px;
       }
+      .format-help {
+        text-align: left;
+        display: inline-block;
+        max-width: 500px;
+        background: rgba(255,255,255,0.55);
+        border: 1px solid #c9b99a;
+        border-radius: 6px;
+        padding: 10px 16px;
+        margin-bottom: 10px;
+        line-height: 1.6;
+      }
+      .format-help code {
+        background: rgba(0,0,0,0.07);
+        border-radius: 3px;
+        padding: 1px 4px;
+        font-family: monospace;
+      }
+      .format-help .warn {
+        color: #8a4800;
+        font-size: 92%;
+      }
     </style>
 </head>
 <body>
 <center>
     <h1>WorkMode Plus</h1>
     <h2>Options Page</h2>
-Below, put any websites you would like to block in this format: "domainname.com/". For example, "facebook.com/" (without quotes). A blank field ("") will be ignored.<br /> 
-Even phrases such as "comp" will work - this would block <i>any</i> URL with the word "comp" as a part of it (i.e. "computer.com", or even "thiscompute".<hr />
 
-Websites/Phrases to Block:<br />
-<textarea id="blockedUrlsTextarea" rows="15" cols="60"></textarea><br />
-<br />
-<div id="status"></div>
-<button id="save">Save Websites</button><br /><hr />
-<button id="reset">Reset To Install Settings</button>
+    <div class="format-help">
+      <strong>How to add blocked sites — one entry per line:</strong>
+      <ul style="margin: 6px 0 6px 0; padding-left: 18px;">
+        <li>
+          <strong>Plain text</strong> — blocks any URL that <em>contains</em> the text (case-insensitive).<br>
+          Example: <code>reddit.com/</code> blocks all of Reddit.
+        </li>
+        <li>
+          <strong>Regex</strong> <code>/pattern/</code> — blocks URLs matching the regular expression.<br>
+          Example: <code>/^https?:\/\/(www\.)?x\.com\//</code> blocks <em>only</em> x.com.<br>
+          <span class="warn">⚠ Plain text like <code>x.com</code> also matches <code>beanspdx.com</code> because
+          "x.com" appears inside it. Use a regex for exact-domain matching.</span>
+        </li>
+      </ul>
+      A blank line is ignored.
+    </div>
+    <br>
+
+    Websites / Patterns to Block:<br>
+    <textarea id="blockedUrlsTextarea" rows="15" cols="60"></textarea><br>
+    <br>
+    <div id="status"></div>
+    <button id="save">Save Websites</button><br /><hr />
+    <button id="reset">Reset To Install Settings</button>
 
 <script src="options.js"></script>
 

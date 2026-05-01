@@ -2,10 +2,11 @@
 // Shrey Ravi
 // WorkMode 3.0.2 - Using Chrome Storage API + Custom URL Blocking
 
-// Default blocked URLs/phrases. These must be lowercase for matching logic.
+// Default blocked URLs/phrases used on first install (before storage is populated).
+// Plain-text entries are lowercased; regex entries (/pattern/) are kept as-is.
 const defaultBlockedUrls = [
     "facebook.com/",
-    "twitter.com/",
+    "/^https?:\\/\\/(www\\.)?x\\.com\\//",
     "youtube.com/",
     "reddit.com/",
     "pinterest.com/",
@@ -13,7 +14,50 @@ const defaultBlockedUrls = [
     "plus.google",
     "tumblr.com/",
     "instagram.com/"
-  ].map(url => url.toLowerCase()); // Ensure all default items are lowercase
+].map(url => /^\/(.+)\/([gimsuy]*)$/.test(url) ? url : url.toLowerCase());
+
+/**
+ * Returns true if the pattern is a regex pattern (wrapped in /…/).
+ * @param {string} pattern
+ * @returns {boolean}
+ */
+function isRegexPattern(pattern) {
+    return /^\/(.+)\/([gimsuy]*)$/.test(pattern);
+}
+
+/**
+ * Normalises regex flags to always include 'i' (case-insensitive).
+ * @param {string} flags  - Raw flags string from the /pattern/flags syntax.
+ * @returns {string}
+ */
+function normalizeRegexFlags(flags) {
+    const f = flags || '';
+    return f.includes('i') ? f : f + 'i';
+}
+
+/**
+ * Tests whether a URL matches a single blocked pattern.
+ * - Patterns wrapped in /…/ (e.g. /^https?:\/\/(www\.)?x\.com\//) are treated as
+ *   regular expressions (case-insensitive by default unless flags are supplied).
+ * - All other patterns are treated as case-insensitive substrings (legacy behaviour).
+ * @param {string} url      - The full tab URL to test.
+ * @param {string} pattern  - A blocked-list entry from storage.
+ * @returns {boolean}
+ */
+function matchesBlockedPattern(url, pattern) {
+    const regexMatch = pattern.match(/^\/(.+)\/([gimsuy]*)$/);
+    if (regexMatch) {
+        try {
+            const regex = new RegExp(regexMatch[1], normalizeRegexFlags(regexMatch[2]));
+            return regex.test(url);
+        } catch (e) {
+            // Invalid regex stored — skip rather than crash.
+            return false;
+        }
+    }
+    // Plain-text entry: case-insensitive substring match (legacy behaviour).
+    return url.toLowerCase().includes(pattern.toLowerCase());
+}
 
 /**
  * Updates the extension action icon globally based on the activation state.
@@ -77,7 +121,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 
         if (isActivated) {
             for (const pattern of currentBlockedUrls) {
-                if (tab.url.toLowerCase().indexOf(pattern) !== -1) {
+                if (matchesBlockedPattern(tab.url, pattern)) {
                     chrome.tabs.remove(tabId, () => {
                         if (chrome.runtime.lastError) {
                             // Log error if removal fails (e.g., tab already closed, or no permission - though unlikely here)
